@@ -63,32 +63,9 @@ const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][NUM_DIRECTIONS] = {
 // clang-format on
 
 #ifdef OLED_ENABLE
-static const char *layer_name(uint8_t layer) {
-    switch (layer) {
-        case _NAV:
-            return "Nav";
-        case _NUM:
-            return "Num";
-        case _SYM:
-            return "Sym";
-        default:
-            return "Base";
-    }
-}
-
-bool oled_task_user(void) {
-    if (!is_keyboard_master()) {
-        return true;
-    }
-    oled_write_ln_P(PSTR("KLAW"), false);
-    oled_write_ln_P(PSTR(""), false);
-    oled_write_P(PSTR("Layer "), false);
-    oled_write_ln(layer_name(get_highest_layer(layer_state)), false);
-
-    led_t led_state = host_keyboard_led_state();
-    oled_write_P(led_state.caps_lock ? PSTR("CAPS ") : PSTR("     "), false);
-    oled_write_P(led_state.num_lock ? PSTR("NUM ") : PSTR("    "), false);
-    oled_write_ln_P(led_state.scroll_lock ? PSTR("SCRL") : PSTR("    "), false);
-    return false;
+// Layer names shown on both OLEDs
+const char *layer_name_klaw(uint8_t layer, bool left) {
+    static const char *const names[] = {"BASE", "NAV", "NUM", "SYM"};
+    return layer < ARRAY_SIZE(names) ? names[layer] : NULL;
 }
 #endif
