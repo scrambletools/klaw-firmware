@@ -1,0 +1,5 @@
+.build/
+*.hex
+*.bin
+*.uf2
+__pycache__/
