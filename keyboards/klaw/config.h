@@ -3,7 +3,9 @@
 #pragma once
 
 // Newer avr-libc no longer includes avr/io.h from util/delay.h, which
-// quantum/send_string relies on for the timer registers
+// quantum/send_string relies on for the timer registers. Upstream QMK has
+// the fix in core (its send_string.c includes the header itself); vial-qmk
+// does not yet, so the AVR Vial build still needs this
 #ifdef __AVR__
 #    include <avr/io.h>
 #endif
