@@ -22,8 +22,12 @@ fi
 python3 tools/gen_keymap.py
 
 for side in left right; do
-    ( cd "$VIAL_QMK" && PATH=$PATH:$TOOLCHAIN QMK_HOME=$PWD QMK_USERSPACE=$OLDPWD \
-        CONVERT_TO=$CONVERTER EXTRAFLAGS="-DINIT_EE_HANDS_${side^^}" make klaw:vial -j"$(nproc)" >/dev/null )
+    log=$(mktemp)
+    if ! ( cd "$VIAL_QMK" && PATH=$PATH:$TOOLCHAIN QMK_HOME=$PWD QMK_USERSPACE=$OLDPWD \
+        CONVERT_TO=$CONVERTER EXTRAFLAGS="-DINIT_EE_HANDS_${side^^}" make klaw:vial -j"$(nproc)" >"$log" 2>&1 ); then
+        cat "$log"; rm -f "$log"; exit 1
+    fi
+    rm -f "$log"
     cp "$VIAL_QMK/.build/klaw_vial_${CONVERTER}.uf2" "klaw_vial_${CONVERTER}_${side}.uf2"
     echo "built klaw_vial_${CONVERTER}_${side}.uf2"
 done
