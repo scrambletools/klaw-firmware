@@ -8,11 +8,14 @@ build the bottom face. Hardware repository: <https://github.com/scrambletools/kl
   bootloader) or an Adafruit KB2040 through the `kb2040` converter
 * Per-key SK6812MINI-E RGB (17 per half, data on D3)
 * EC11 encoder per half (F4/F5) with push switch in the key matrix
-* 0.96" SSD1306 OLED per half on I2C, 128x64. Each half shows only the name
-  of the active layer for its own side, centred, at twice the built-in font
-  size (12x16 pixel characters, up to 10) by scaling the driver's rendering
-  in `klaw.c`. Names come from `layer_name_klaw()` in the keymap. The AVR
-  build shows the name in the plain 6x8 font
+* 0.96" SSD1306 OLED per half on I2C, 128x64. Each half shows the name of
+  the active layer for its own side at the top, centred, at twice the
+  built-in font size (12x16 pixel characters, up to 10) by scaling the
+  driver's rendering in `klaw.c`, and 16x16 icons along the bottom for caps
+  lock, audio on and RGB on. The icons are ASCII art in
+  `tools/gen_icons.py`, which writes `oled_icons.h`. Names come from
+  `layer_name_klaw()` in the keymap. The AVR build shows the name and a
+  caps lock text in the plain 6x8 font
 * Piezo buzzer on B5. Driven by hardware PWM on the RP2040 build (GP9,
   PWM slice 4); off on the ATmega32U4, whose flash is full
 * TRRS between halves, soft serial on D2

@@ -26,6 +26,11 @@
 #    define OLED_DISPLAY_128X64
 #endif
 
+// The primary tells the secondary whether audio is on, for the OLED indicator
+#ifdef AUDIO_ENABLE
+#    define SPLIT_TRANSACTION_IDS_KB KLAW_SYNC_STATE
+#endif
+
 // Give the split link a moment to settle before the primary decides it is alone
 #define SPLIT_USB_TIMEOUT 2000
 

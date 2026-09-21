@@ -14,6 +14,8 @@
 // keeps one-shot keys, matrix mirroring and every effect from keyboard.json.
 #ifdef __AVR__
 #    define LAYER_STATE_8BIT
+// No lock-state sync to the secondary, its OLED shows the layer name only
+#    undef SPLIT_LED_STATE_ENABLE
 #    define NO_ACTION_ONESHOT
 
 // Matrix mirroring only feeds reactive RGB effects, which are off here

@@ -20,6 +20,7 @@ the checkout instead of copied.
 * `tools/flash.sh` - hands-free flashing over the Caterina bootloader
 * `tools/gen_vial_layout.py` - regenerates the Vial layout drawing from the
   PCB, see below
+* `tools/gen_icons.py` - turns ASCII art into the OLED status icons
 * `tools/vial_dump.py`, `tools/vial_restore.py` - save and restore the
   KLAW's Vial configuration over USB, see below
 * `tools/gen_keymap.py` - regenerates the compiled keymap from that
@@ -35,7 +36,7 @@ RP2040, and trims it on the ATmega32U4 to fit the flash.
 |---|---|---|---|
 | Split with handedness in EEPROM | yes | yes | yes |
 | Both encoders with per-layer map | yes | yes | yes |
-| OLEDs with per-side layer names | yes, small font on AVR, big on RP2040 | yes, big font | yes, small font |
+| OLEDs with per-side layer names and status icons | yes, small font on AVR, big on RP2040 | yes, big font and icons | yes, small font, caps text |
 | Per-key RGB | yes, 8 effects | yes, all 49 effects | yes, 2 effects |
 | Media and system keys | yes | yes | yes |
 | Mouse keys | yes | yes | no |
@@ -162,8 +163,11 @@ Vial (Security, Unlock, then hold Q and T).
 Layer names are compile-time only, neither Vial nor QMK stores them on the
 keyboard. The `LAYER_NAMES` list in `gen_keymap.py`, one pair of names per
 layer for the left and right half, ends up as `layer_name_klaw()` in
-`keymap.c`. Each half's OLED shows nothing but its own name for the active
-layer, centred.
+`keymap.c`. Each half's OLED shows its own name for the active layer at
+the top, centred, and icons at the bottom for caps lock, audio and RGB.
+The secondary learns the lock state through the split link's indicator
+sync and the audio state through a small keyboard-level transaction, so
+both screens agree. The icons are ASCII art in `tools/gen_icons.py`.
 
 The home row keys are mod-taps such as `LSFT_T(KC_A)`, with Chordal Hold
 switched on in the QMK settings. Chordal Hold is QMK's equivalent of ZMK's

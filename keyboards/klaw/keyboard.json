@@ -395,7 +395,8 @@
             "sync": {
                 "oled": true,
                 "matrix_state": true,
-                "layer_state": true
+                "layer_state": true,
+                "indicators": true
             }
         }
     },
