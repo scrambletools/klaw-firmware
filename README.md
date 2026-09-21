@@ -193,7 +193,12 @@ With 2 MB of flash none of the AVR trimming applies: the RP2040 build keeps
 mouse keys, one-shot keys, tap dance, combos, key overrides, QMK settings,
 matrix mirroring and every RGB effect enabled in `keyboard.json`. The
 keymap's `rules.mk` and `config.h` switch these on whenever a converter is
-in use. Audio stays off on both controllers.
+in use, and also enable the piezo through the RP2040's hardware PWM. Audio
+plays a startup and a goodbye tune; `AU_TOGG` turns it on and off and the
+state is kept in EEPROM, `CK_TOGG` adds a click per keypress with `CK_UP`
+and `CK_DOWN` for its pitch. Assign those keycodes in Vial (Quantum tab).
+The tunes are compile-time `SONG()` definitions in the keymap's `config.h`.
+Audio stays off on the ATmega32U4.
 
 To flash, get the half to show up as the `RPI-RP2` USB drive, then copy the
 `.uf2` onto it. The KLAW reset button pulls the footprint's RST pin, which is

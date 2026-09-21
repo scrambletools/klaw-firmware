@@ -13,6 +13,12 @@
 // Piezo buzzer, only used when AUDIO_ENABLE is set in a keymap
 #ifdef AUDIO_ENABLE
 #    define AUDIO_PIN B5
+#    ifdef MCU_RP
+// GP9 is PWM slice 4, channel B on the RP2040
+#        define AUDIO_PWM_DRIVER PWMD4
+#        define AUDIO_PWM_CHANNEL RP2040_PWM_CHANNEL_B
+#        define AUDIO_INIT_DELAY
+#    endif
 #endif
 
 // 0.96" SSD1306 module on I2C (D1/D0), one per half

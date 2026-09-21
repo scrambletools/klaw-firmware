@@ -13,7 +13,8 @@ build the bottom face. Hardware repository: <https://github.com/scrambletools/kl
   size (12x16 pixel characters, up to 10) by scaling the driver's rendering
   in `klaw.c`. Names come from `layer_name_klaw()` in the keymap. The AVR
   build shows the name in the plain 6x8 font
-* Piezo buzzer on B5 (audio disabled on both controllers)
+* Piezo buzzer on B5. Driven by hardware PWM on the RP2040 build (GP9,
+  PWM slice 4); off on the ATmega32U4, whose flash is full
 * TRRS between halves, soft serial on D2
 
 ## Matrix

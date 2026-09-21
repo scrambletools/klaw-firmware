@@ -87,6 +87,14 @@
 #undef ENCODER_B_PINS_RIGHT
 #define ENCODER_B_PINS_RIGHT { F6 }
 
+// Buzzer: startup and goodbye tunes, key click available through CK_TOGG.
+// AU_TOGG turns the audio on and off, the state is kept in EEPROM
+#ifdef AUDIO_ENABLE
+#    define STARTUP_SONG SONG(STARTUP_SOUND)
+#    define GOODBYE_SONG SONG(GOODBYE_SOUND)
+#    define AUDIO_CLICKY
+#endif
+
 #define TAPPING_TERM 200
 #define PERMISSIVE_HOLD
 #define QUICK_TAP_TERM 0
