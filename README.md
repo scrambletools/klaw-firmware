@@ -17,6 +17,8 @@ the checkout instead of copied.
   per-key RGB is controlled from the Vial lighting tab. Generated from the
   keyboard's own Vial configuration (see below). Builds for the ATmega32U4
   Pro Micro and for the Adafruit KB2040
+* `tools/build.sh` - dumps the connected keyboard, regenerates the keymap and
+  builds both KB2040 images
 * `tools/flash.sh` - hands-free flashing over the Caterina bootloader
 * `tools/gen_vial_layout.py` - regenerates the Vial layout drawing from the
   PCB, see below
@@ -156,9 +158,18 @@ and a third turns it into the compiled defaults:
 
 `gen_keymap.py` writes `keymaps/vial/keymap.c` (layers, encoder map, layer
 names, Chordal Hold handedness) and `vial_defaults.h` (everything Vial keeps
-only in EEPROM). Edit in Vial, dump, regenerate, rebuild. Restoring writes
-into the half on USB only, and macros only while that half is unlocked in
-Vial (Security, Unlock, then hold Q and T).
+only in EEPROM). Restoring writes into the half on USB only, and macros only
+while that half is unlocked in Vial (Security, Unlock, then hold Q and T).
+
+The everyday loop is: edit in Vial, then build with the keyboard plugged in:
+
+    tools/build.sh
+
+It dumps the connected half first, regenerates the keymap and builds both
+images. Always build with the keyboard connected after editing in Vial. A
+firmware built on a later day than the one on the keyboard wipes the Vial
+storage on first boot, and what comes back is what was compiled in, so a
+build made from a stale dump silently reverts the edits made since.
 
 Layer names are compile-time only, neither Vial nor QMK stores them on the
 keyboard. The `LAYER_NAMES` list in `gen_keymap.py`, one pair of names per
