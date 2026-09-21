@@ -49,7 +49,10 @@ RP2040, and trims it on the ATmega32U4 to fit the flash.
 | N-key rollover | off | off | off |
 
 Whatever the build, flash each half once with its own handedness image, and
-pass the converter name matching the controller for an RP2040 board. The
+pass the converter name matching the controller for an RP2040 board. Flash
+both halves before using the keyboard again: halves running different
+images can disagree about the split link, and the secondary's keys then
+never arrive until both are updated. The
 buzzer configuration and N-key rollover are candidates for the upstream QMK
 definition later.
 
