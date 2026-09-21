@@ -8,14 +8,10 @@ build the bottom face. Hardware repository: <https://github.com/scrambletools/kl
   bootloader) or an Adafruit KB2040 through the `kb2040` converter
 * Per-key SK6812MINI-E RGB (17 per half, data on D3)
 * EC11 encoder per half (F4/F5) with push switch in the key matrix
-* 0.96" SSD1306 OLED per half on I2C, 128x64. Each half shows the name of
-  the active layer for its own side at the top, centred, at twice the
-  built-in font size (12x16 pixel characters, up to 10) by scaling the
-  driver's rendering in `klaw.c`, and 16x16 icons along the bottom for caps
-  (caps lock or Caps Word), audio on, key click on and RGB on. The icons are ASCII art in
-  `tools/gen_icons.py`, which writes `oled_icons.h`. Names come from
-  `layer_name_klaw()` in the keymap. The AVR build shows the name and a
-  caps lock text in the plain 6x8 font
+* 0.96" SSD1306 OLED per half on I2C, 128x64. Shows the active layer's
+  name for that side in a scaled 12x16 font and status icons for caps,
+  audio, key click and RGB; see `klaw.c`. Names come from
+  `layer_name_klaw()` in the keymap, icons from `oled_icons.h`
 * Piezo buzzer on B5. Driven by hardware PWM on the RP2040 build (GP9,
   PWM slice 4); off on the ATmega32U4, whose flash is full
 * TRRS between halves, soft serial on D2
@@ -49,22 +45,18 @@ that override for a board without the bodge.
     qmk compile -kb klaw -km default
     qmk flash -kb klaw -km default
 
-Vial: build `klaw:vial` from a vial-qmk checkout (see the repository README).
+Add `CONVERT_TO=kb2040` for an Adafruit KB2040; the AVR pin names stay
+valid, the converter maps them to the KB2040's GPIOs, which differ from
+other RP2040 Pro Micro boards on three column pins. The result is a `.uf2`
+to copy onto the `RPI-RP2` drive that appears after a double tap of the
+KLAW reset button (wired to RST, the RP2040 RUN pin), or after a 1200 baud
+touch of the serial port while the board still runs CircuitPython.
 
-Adafruit KB2040: add `CONVERT_TO=kb2040` to either build. The result is a
-`.uf2` to copy onto the `RPI-RP2` drive that appears after a double tap of
-the KLAW reset button (wired to RST, the RP2040 RUN pin), or after a 1200
-baud touch of the serial port while the board still runs CircuitPython.
-The AVR pin names above stay valid, the converter maps
-them to the KB2040's GPIOs, which differ from other RP2040 Pro Micro boards
-on three column pins.
-
-The halves store their side in EEPROM (`EE_HANDS`). Build the firmware once
-with `-DINIT_EE_HANDS_LEFT` for the left half and once with
+The halves store their side in EEPROM (`EE_HANDS`). Build once with
+`-DINIT_EE_HANDS_LEFT` for the left half and once with
 `-DINIT_EE_HANDS_RIGHT` for the right half, or use the `uf2-split-left` and
-`uf2-split-right` flash targets.
+`uf2-split-right` (`avrdude-split-*` on AVR) flash targets. Flash each half
+separately with its own image. Hold the top pinky key of a half while
+plugging it in to enter the bootloader with Bootmagic.
 
-Flash each half separately. When the flasher waits for a serial port, press
-the reset button on the PCB (double tap on some Pro Micro clones). Hold the
-top pinky key of a half while plugging it in to enter the bootloader with
-Bootmagic.
+The Vial keymap and its tooling are described in the repository README.
