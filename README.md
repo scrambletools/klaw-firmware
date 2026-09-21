@@ -26,6 +26,30 @@ the checkout instead of copied.
   configuration, see below
 * `reference/klaw_vial.json` - the KLAW's current Vial configuration
 
+## What each build enables
+
+The keyboard definition sets a baseline; the Vial keymap adds to it on the
+RP2040, and trims it on the ATmega32U4 to fit the flash.
+
+| Feature | QMK default keymap, either controller | Vial keymap on KB2040 | Vial keymap on ATmega32U4 |
+|---|---|---|---|
+| Split with handedness in EEPROM | yes | yes | yes |
+| Both encoders with per-layer map | yes | yes | yes |
+| OLEDs with per-side layer names | yes, small font on AVR, big on RP2040 | yes, big font | yes, small font |
+| Per-key RGB | yes, 8 effects | yes, all 49 effects | yes, 2 effects |
+| Media and system keys | yes | yes | yes |
+| Mouse keys | yes | yes | no |
+| Bootmagic reset | yes | yes | yes |
+| Buzzer | off | on, with tunes and key click | off |
+| Vial: dynamic keymap, tap dance, combos, key overrides, settings, macros | no | yes, with seeded defaults | keymap and macros only |
+| Chordal Hold home row | no | yes | no |
+| N-key rollover | off | off | off |
+
+Whatever the build, flash each half once with its own handedness image, and
+pass the converter name matching the controller for an RP2040 board. The
+buzzer configuration and N-key rollover are candidates for the upstream QMK
+definition later.
+
 ## Setup
 
     # once: QMK checkout and CLI
