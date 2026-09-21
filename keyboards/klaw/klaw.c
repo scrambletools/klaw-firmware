@@ -5,11 +5,15 @@
 #include "oled_icons.h"
 
 #if defined(SPLIT_KEYBOARD) && !defined(__AVR__)
-// States that only the primary knows, sent to the secondary for its OLED
+// States that only the primary knows, sent to the secondary for its OLED and
+// for the key click, which each half plays for its own keys
 #    ifdef AUDIO_ENABLE
 #        include "audio.h"
 #        ifdef AUDIO_CLICKY
 #            include "process_clicky.h"
+extern float          clicky_freq;
+extern float          clicky_rand;
+extern audio_config_t audio_config;
 #        endif
 #    endif
 #    ifdef CAPS_WORD_ENABLE
@@ -18,24 +22,30 @@
 
 enum { STATE_AUDIO = 1 << 0, STATE_CLICKY = 1 << 1, STATE_CAPS_WORD = 1 << 2 };
 
-static uint8_t synced_state;
+typedef struct __attribute__((packed)) {
+    uint8_t  flags;
+    uint16_t clicky_freq;
+} sync_state_t;
 
-static uint8_t local_state(void) {
-    uint8_t state = 0;
+static sync_state_t synced;
+
+static sync_state_t local_state(void) {
+    sync_state_t state = {0};
 #    ifdef AUDIO_ENABLE
-    if (audio_is_on()) state |= STATE_AUDIO;
+    if (audio_is_on()) state.flags |= STATE_AUDIO;
 #        ifdef AUDIO_CLICKY
-    if (is_clicky_on()) state |= STATE_CLICKY;
+    if (is_clicky_on()) state.flags |= STATE_CLICKY;
+    state.clicky_freq = (uint16_t)clicky_freq;
 #        endif
 #    endif
 #    ifdef CAPS_WORD_ENABLE
-    if (is_caps_word_on()) state |= STATE_CAPS_WORD;
+    if (is_caps_word_on()) state.flags |= STATE_CAPS_WORD;
 #    endif
     return state;
 }
 
 static void sync_state_handler(uint8_t in_len, const void *in, uint8_t out_len, void *out) {
-    synced_state = *(const uint8_t *)in;
+    memcpy(&synced, in, sizeof(synced));
 }
 
 void keyboard_post_init_kb(void) {
@@ -43,14 +53,67 @@ void keyboard_post_init_kb(void) {
     keyboard_post_init_user();
 }
 
+static uint8_t first_local_row(void) {
+    return is_keyboard_left() ? 0 : MATRIX_ROWS / 2;
+}
+
+#    if defined(AUDIO_ENABLE) && defined(AUDIO_CLICKY)
+// The primary's clicky only reacts to keys of its own half
+static bool own_key(keypos_t key) {
+    return key.row >= first_local_row() && key.row < first_local_row() + MATRIX_ROWS / 2;
+}
+
+static bool clicky_paused;
+
+bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
+    if (!own_key(record->event.key) && audio_config.clicky_enable) {
+        audio_config.clicky_enable = false;
+        clicky_paused             = true;
+    }
+    return process_record_user(keycode, record);
+}
+
+void post_process_record_kb(uint16_t keycode, keyrecord_t *record) {
+    if (clicky_paused) {
+        audio_config.clicky_enable = true;
+        clicky_paused             = false;
+    }
+    post_process_record_user(keycode, record);
+}
+
+// The secondary clicks for its own key presses, same sound as QMK's clicky
+static void secondary_click(void) {
+    static float song[][2] = {{0.0f, 1}, {440.0f, 3}, {440.0f, 1}};
+    float        freq      = synced.clicky_freq ? synced.clicky_freq : clicky_freq;
+    song[1][0]             = 2.0f * freq * (1.0f + clicky_rand * ((float)rand() / (float)RAND_MAX));
+    song[2][0]             = freq * (1.0f + clicky_rand * ((float)rand() / (float)RAND_MAX));
+    PLAY_SONG(song);
+}
+
+static void secondary_click_task(void) {
+    static matrix_row_t previous[MATRIX_ROWS / 2];
+    bool                click = (synced.flags & STATE_AUDIO) && (synced.flags & STATE_CLICKY);
+    for (uint8_t row = 0; row < MATRIX_ROWS / 2; row++) {
+        matrix_row_t now = matrix_get_row(first_local_row() + row);
+        if (click && (now & ~previous[row])) {
+            secondary_click();
+        }
+        previous[row] = now;
+    }
+}
+#    endif
+
 void housekeeping_task_kb(void) {
-    static uint8_t  last_sent = 0xFF;
-    static uint32_t last_time;
+    static sync_state_t last_sent = {0xFF, 0};
+    static uint32_t     last_time;
     if (!is_keyboard_master()) {
+#    if defined(AUDIO_ENABLE) && defined(AUDIO_CLICKY)
+        secondary_click_task();
+#    endif
         return;
     }
-    uint8_t state = local_state();
-    if (state != last_sent || timer_elapsed32(last_time) > 500) {
+    sync_state_t state = local_state();
+    if (memcmp(&state, &last_sent, sizeof(state)) != 0 || timer_elapsed32(last_time) > 500) {
         if (transaction_rpc_send(KLAW_SYNC_STATE, sizeof(state), &state)) {
             last_sent = state;
             last_time = timer_read32();
@@ -59,7 +122,7 @@ void housekeeping_task_kb(void) {
 }
 
 static uint8_t shared_state(void) {
-    return is_keyboard_master() ? local_state() : synced_state;
+    return is_keyboard_master() ? local_state().flags : synced.flags;
 }
 #endif
 

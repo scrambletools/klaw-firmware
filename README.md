@@ -245,6 +245,10 @@ in use, and also enable the piezo through the RP2040's hardware PWM. Audio
 plays a startup and a goodbye tune; `AU_TOGG` turns it on and off and the
 state is kept in EEPROM, `CK_TOGG` adds a click per keypress with `CK_UP`
 and `CK_DOWN` for its pitch. Assign those keycodes in Vial (Quantum tab).
+Each half clicks for its own keys through its own buzzer: the primary skips
+keys that arrived from the other half, and the secondary watches its own
+matrix and plays the same click, with the on/off state and pitch received
+from the primary. Tunes only play on the primary.
 The tunes are compile-time `SONG()` definitions in the keymap's `config.h`.
 Audio stays off on the ATmega32U4.
 

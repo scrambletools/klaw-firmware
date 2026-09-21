@@ -19,7 +19,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                                    KC_ESC  , KC_TAB  , KC_MNXT ,   KC_MNXT , TO(0)   , TO(0)   
     ),
     [2] = LAYOUT(
-        QK_UNDERGLOW_TOGGLE, QK_AUDIO_TOGGLE, QK_AUDIO_CLICKY_TOGGLE, KC_CAPS , TD(12)  ,                     RSFT(KC_QUOT), RSFT(KC_9), RSFT(KC_0), RSFT(KC_MINS), RSFT(KC_3),
+        QK_UNDERGLOW_TOGGLE, QK_AUDIO_TOGGLE, QK_AUDIO_CLICKY_TOGGLE, KC_NO   , TD(12)  ,                     RSFT(KC_QUOT), RSFT(KC_9), RSFT(KC_0), RSFT(KC_MINS), RSFT(KC_3),
         KC_LSFT , KC_LALT , KC_LCTL , KC_LGUI , LGUI(KC_V),                     KC_QUOT , RSFT(KC_LBRC), RSFT(KC_RBRC), KC_MINS , KC_EQL  ,
         KC_NO   , LGUI(KC_ESC), LGUI(LSFT(KC_SPC)), LGUI(KC_SPC), LGUI(KC_Z),                     KC_GRV  , KC_LBRC , KC_RBRC , RSFT(KC_GRV), KC_BSLS ,
                                    TO(1)   , KC_NO   , KC_MNXT ,   KC_MNXT , KC_ENT  , KC_DEL  
