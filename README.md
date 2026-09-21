@@ -175,10 +175,16 @@ Layer names are compile-time only, neither Vial nor QMK stores them on the
 keyboard. The `LAYER_NAMES` list in `gen_keymap.py`, one pair of names per
 layer for the left and right half, ends up as `layer_name_klaw()` in
 `keymap.c`. Each half's OLED shows its own name for the active layer at
-the top, centred, and icons at the bottom for caps lock, audio and RGB.
-The secondary learns the lock state through the split link's indicator
-sync and the audio state through a small keyboard-level transaction, so
-both screens agree. The icons are ASCII art in `tools/gen_icons.py`.
+the top, centred, and icons at the bottom for caps (caps lock or Caps
+Word), audio, key click and RGB. The secondary learns the host's lock state
+through the split link's indicator sync and the other states through a
+small keyboard-level transaction, so both screens agree. The icons are
+ASCII art in `tools/gen_icons.py`.
+
+The keymap has no caps lock key; assign `CW_TOGG` (Caps Word) or `KC_CAPS`
+in Vial if you want one. Note that Wayland compositors such as Hyprland keep
+caps lock per keyboard, so caps lock pressed on another keyboard does not
+light the KLAW's indicator.
 
 The home row keys are mod-taps such as `LSFT_T(KC_A)`, with Chordal Hold
 switched on in the QMK settings. Chordal Hold is QMK's equivalent of ZMK's

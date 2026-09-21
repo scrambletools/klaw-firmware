@@ -26,8 +26,9 @@
 #    define OLED_DISPLAY_128X64
 #endif
 
-// The primary tells the secondary whether audio is on, for the OLED indicator
-#ifdef AUDIO_ENABLE
+// The primary sends the secondary the states shown on the OLED (audio, click,
+// caps word). Not on the ATmega32U4, whose flash is full
+#ifndef __AVR__
 #    define SPLIT_TRANSACTION_IDS_KB KLAW_SYNC_STATE
 #endif
 

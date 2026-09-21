@@ -4,12 +4,38 @@
 #include "transactions.h"
 #include "oled_icons.h"
 
-#if defined(AUDIO_ENABLE) && defined(SPLIT_KEYBOARD)
-// Audio only runs on the primary, the secondary learns its state over the link
-static uint8_t synced_audio_on;
+#if defined(SPLIT_KEYBOARD) && !defined(__AVR__)
+// States that only the primary knows, sent to the secondary for its OLED
+#    ifdef AUDIO_ENABLE
+#        include "audio.h"
+#        ifdef AUDIO_CLICKY
+#            include "process_clicky.h"
+#        endif
+#    endif
+#    ifdef CAPS_WORD_ENABLE
+#        include "caps_word.h"
+#    endif
+
+enum { STATE_AUDIO = 1 << 0, STATE_CLICKY = 1 << 1, STATE_CAPS_WORD = 1 << 2 };
+
+static uint8_t synced_state;
+
+static uint8_t local_state(void) {
+    uint8_t state = 0;
+#    ifdef AUDIO_ENABLE
+    if (audio_is_on()) state |= STATE_AUDIO;
+#        ifdef AUDIO_CLICKY
+    if (is_clicky_on()) state |= STATE_CLICKY;
+#        endif
+#    endif
+#    ifdef CAPS_WORD_ENABLE
+    if (is_caps_word_on()) state |= STATE_CAPS_WORD;
+#    endif
+    return state;
+}
 
 static void sync_state_handler(uint8_t in_len, const void *in, uint8_t out_len, void *out) {
-    synced_audio_on = *(const uint8_t *)in;
+    synced_state = *(const uint8_t *)in;
 }
 
 void keyboard_post_init_kb(void) {
@@ -23,17 +49,17 @@ void housekeeping_task_kb(void) {
     if (!is_keyboard_master()) {
         return;
     }
-    uint8_t on = audio_is_on();
-    if (on != last_sent || timer_elapsed32(last_time) > 500) {
-        if (transaction_rpc_send(KLAW_SYNC_STATE, sizeof(on), &on)) {
-            last_sent = on;
+    uint8_t state = local_state();
+    if (state != last_sent || timer_elapsed32(last_time) > 500) {
+        if (transaction_rpc_send(KLAW_SYNC_STATE, sizeof(state), &state)) {
+            last_sent = state;
             last_time = timer_read32();
         }
     }
 }
 
-static bool audio_indicator(void) {
-    return is_keyboard_master() ? audio_is_on() : synced_audio_on;
+static uint8_t shared_state(void) {
+    return is_keyboard_master() ? local_state() : synced_state;
 }
 #endif
 
@@ -122,15 +148,18 @@ static void render(void) {
     char            fallback[BIG_CHARS + 1];
     uint8_t         layer;
     const char     *name = current_name(fallback, sizeof(fallback), &layer);
-    bool            caps = host_keyboard_led_state().caps_lock;
-    bool            rgb = false, audio = false;
+    uint8_t         flags = 0;
+#        ifdef SPLIT_KEYBOARD
+    flags = shared_state();
+#        endif
+    bool caps   = host_keyboard_led_state().caps_lock || (flags & STATE_CAPS_WORD);
+    bool audio  = flags & STATE_AUDIO;
+    bool clicky = flags & STATE_CLICKY;
+    bool rgb    = false;
 #        ifdef RGB_MATRIX_ENABLE
     rgb = rgb_matrix_is_enabled();
 #        endif
-#        if defined(AUDIO_ENABLE) && defined(SPLIT_KEYBOARD)
-    audio = audio_indicator();
-#        endif
-    uint32_t state = layer | (caps << 8) | (rgb << 9) | (audio << 10);
+    uint32_t state = layer | (caps << 8) | (audio << 9) | (clicky << 10) | (rgb << 11);
     if (state == shown) {
         return;
     }
@@ -139,14 +168,18 @@ static void render(void) {
         blank_line(line);
     }
     oled_write_big(0, name);
+    // four icon slots along the bottom: caps, audio, click, RGB
     if (caps) {
-        draw_icon(24, LINES - 2, icon_caps);
+        draw_icon(8, LINES - 2, icon_caps);
     }
     if (audio) {
-        draw_icon(56, LINES - 2, icon_audio);
+        draw_icon(40, LINES - 2, icon_audio);
+    }
+    if (clicky) {
+        draw_icon(72, LINES - 2, icon_clicky);
     }
     if (rgb) {
-        draw_icon(88, LINES - 2, icon_rgb);
+        draw_icon(104, LINES - 2, icon_rgb);
     }
 }
 #    else

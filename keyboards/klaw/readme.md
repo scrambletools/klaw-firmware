@@ -12,7 +12,7 @@ build the bottom face. Hardware repository: <https://github.com/scrambletools/kl
   the active layer for its own side at the top, centred, at twice the
   built-in font size (12x16 pixel characters, up to 10) by scaling the
   driver's rendering in `klaw.c`, and 16x16 icons along the bottom for caps
-  lock, audio on and RGB on. The icons are ASCII art in
+  (caps lock or Caps Word), audio on, key click on and RGB on. The icons are ASCII art in
   `tools/gen_icons.py`, which writes `oled_icons.h`. Names come from
   `layer_name_klaw()` in the keymap. The AVR build shows the name and a
   caps lock text in the plain 6x8 font
