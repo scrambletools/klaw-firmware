@@ -1,7 +1,6 @@
 # klaw-firmware
 
-QMK firmware for the [KLAW](https://github.com/scrambletools/klaw), a
-reversible 34-key split keyboard derived from GEIGEIGEIST's KLOR. The main
+QMK firmware for the [KLAW](https://github.com/scrambletools/klaw), a 34-key split keyboard with support for hotswap MX switches, per key RGB, an OLED, buzzer and encoder on each side, and Vial. The main
 target is a Vial build for the Adafruit KB2040; the ATmega32U4 Pro Micro is
 still supported with a trimmed feature set.
 
