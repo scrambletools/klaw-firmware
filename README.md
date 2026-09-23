@@ -44,7 +44,7 @@ RP2040 and trims it on the ATmega32U4 to fit the flash.
 | Media and system keys | yes | yes | yes |
 | Mouse keys | yes | yes | no |
 | Bootmagic reset | yes | yes | yes |
-| Buzzer | off | on, with tunes and key click | off |
+| Buzzer | off | on: tunes, key click, encoder turn sound, per half | off |
 | Vial: dynamic keymap, tap dance, combos, key overrides, settings, macros | no | yes, with seeded defaults | keymap and macros only |
 | Chordal Hold home row | no | yes | no |
 | N-key rollover | off | off | off |

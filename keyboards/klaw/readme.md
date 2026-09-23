@@ -13,7 +13,9 @@ build the bottom face. Hardware repository: <https://github.com/scrambletools/kl
   audio, key click and RGB; see `klaw.c`. Names come from
   `layer_name_klaw()` in the keymap, icons from `oled_icons.h`
 * Piezo buzzer on B5. Driven by hardware PWM on the RP2040 build (GP9,
-  PWM slice 4); off on the ATmega32U4, whose flash is full
+  PWM slice 4): tunes on the primary, key click and encoder turn sound on
+  the half the key or encoder is on; off on the ATmega32U4, whose flash is
+  full
 * TRRS between halves, soft serial on D2
 
 ## Matrix
