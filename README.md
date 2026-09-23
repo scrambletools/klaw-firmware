@@ -206,10 +206,12 @@ The KB2040 build drives the piezo through the RP2040's hardware PWM. Audio
 plays a startup and a goodbye tune; `AU_TOGG` turns it on and off and the
 state is kept in EEPROM, `CK_TOGG` adds a click per keypress with `CK_UP`
 and `CK_DOWN` for its pitch. Assign those keycodes in Vial (Quantum tab).
-Each half clicks for its own keys through its own buzzer: the primary skips
-keys that arrived from the other half, and the secondary watches its own
-matrix and plays the same click, with the on/off state and pitch received
-from the primary. Tunes only play on the primary. The tunes are compile-time
+Each half clicks for its own keys through its own buzzer. QMK's own clicky
+would sound on the primary for the keys of both halves, so it stays off;
+instead each half watches its own matrix and plays the same click for every
+press it sees. The primary handles the `CK_` keycodes, keeps the on/off
+state in the keyboard's EEPROM word and sends it to the secondary together
+with the pitch. Tunes only play on the primary. The tunes are compile-time
 `SONG()` definitions in the keymap's `config.h`.
 
 ## Key drawing and LED map from the PCB

@@ -29,12 +29,85 @@ typedef struct __attribute__((packed)) {
 
 static sync_state_t synced;
 
+static uint8_t first_local_row(void) {
+    return is_keyboard_left() ? 0 : MATRIX_ROWS / 2;
+}
+
+#    if defined(AUDIO_ENABLE) && defined(AUDIO_CLICKY)
+// One click per physical key press, played by the half the key is on. QMK's
+// own clicky runs on the primary for the keys of both halves, so it stays
+// off and its keycodes are handled here. The on/off state lives in the
+// keyboard's EEPROM word and reaches the secondary with the pitch.
+static bool click_on;
+
+static void click_load(void) {
+    click_on = eeconfig_read_kb() & 1;
+}
+
+static void click_save(void) {
+    eeconfig_update_kb(click_on ? 1 : 0);
+}
+
+bool pre_process_record_kb(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case QK_AUDIO_CLICKY_TOGGLE:
+        case QK_AUDIO_CLICKY_ON:
+        case QK_AUDIO_CLICKY_OFF:
+            if (record->event.pressed) {
+                click_on = keycode == QK_AUDIO_CLICKY_TOGGLE ? !click_on : keycode == QK_AUDIO_CLICKY_ON;
+                click_save();
+            }
+            return false;
+        case QK_AUDIO_CLICKY_UP:
+            if (record->event.pressed) clicky_freq_up();
+            return false;
+        case QK_AUDIO_CLICKY_DOWN:
+            if (record->event.pressed) clicky_freq_down();
+            return false;
+        case QK_AUDIO_CLICKY_RESET:
+            if (record->event.pressed) clicky_freq_reset();
+            return false;
+    }
+    return pre_process_record_user(keycode, record);
+}
+
+// QMK's click sound: a short rest, a high blip and a lower one, slightly random
+static void play_click(float freq) {
+    static float song[][2] = {{0.0f, 1}, {440.0f, 3}, {440.0f, 1}};
+    song[1][0]             = 2.0f * freq * (1.0f + clicky_rand * ((float)rand() / (float)RAND_MAX));
+    song[2][0]             = freq * (1.0f + clicky_rand * ((float)rand() / (float)RAND_MAX));
+    PLAY_SONG(song);
+}
+
+static void click_task(void) {
+    static matrix_row_t previous[MATRIX_ROWS / 2];
+    bool                on;
+    float               freq;
+    if (is_keyboard_master()) {
+        on   = audio_is_on() && click_on;
+        freq = clicky_freq;
+    } else {
+        // follow the primary's audio switch, without touching this half's EEPROM
+        audio_config.enable = (synced.flags & STATE_AUDIO) != 0;
+        on                  = audio_config.enable && (synced.flags & STATE_CLICKY);
+        freq                = synced.clicky_freq ? synced.clicky_freq : clicky_freq;
+    }
+    for (uint8_t row = 0; row < MATRIX_ROWS / 2; row++) {
+        matrix_row_t now = matrix_get_row(first_local_row() + row);
+        if (on && (now & ~previous[row])) {
+            play_click(freq);
+        }
+        previous[row] = now;
+    }
+}
+#    endif
+
 static sync_state_t local_state(void) {
     sync_state_t state = {0};
 #    ifdef AUDIO_ENABLE
     if (audio_is_on()) state.flags |= STATE_AUDIO;
 #        ifdef AUDIO_CLICKY
-    if (is_clicky_on()) state.flags |= STATE_CLICKY;
+    if (click_on) state.flags |= STATE_CLICKY;
     state.clicky_freq = (uint16_t)clicky_freq;
 #        endif
 #    endif
@@ -50,66 +123,20 @@ static void sync_state_handler(uint8_t in_len, const void *in, uint8_t out_len, 
 
 void keyboard_post_init_kb(void) {
     transaction_register_rpc(KLAW_SYNC_STATE, sync_state_handler);
+#    if defined(AUDIO_ENABLE) && defined(AUDIO_CLICKY)
+    audio_config.clicky_enable = false; // the click is played here, not by QMK
+    click_load();
+#    endif
     keyboard_post_init_user();
 }
-
-static uint8_t first_local_row(void) {
-    return is_keyboard_left() ? 0 : MATRIX_ROWS / 2;
-}
-
-#    if defined(AUDIO_ENABLE) && defined(AUDIO_CLICKY)
-// The primary's clicky only reacts to keys of its own half
-static bool own_key(keypos_t key) {
-    return key.row >= first_local_row() && key.row < first_local_row() + MATRIX_ROWS / 2;
-}
-
-static bool clicky_paused;
-
-bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
-    if (!own_key(record->event.key) && audio_config.clicky_enable) {
-        audio_config.clicky_enable = false;
-        clicky_paused             = true;
-    }
-    return process_record_user(keycode, record);
-}
-
-void post_process_record_kb(uint16_t keycode, keyrecord_t *record) {
-    if (clicky_paused) {
-        audio_config.clicky_enable = true;
-        clicky_paused             = false;
-    }
-    post_process_record_user(keycode, record);
-}
-
-// The secondary clicks for its own key presses, same sound as QMK's clicky
-static void secondary_click(void) {
-    static float song[][2] = {{0.0f, 1}, {440.0f, 3}, {440.0f, 1}};
-    float        freq      = synced.clicky_freq ? synced.clicky_freq : clicky_freq;
-    song[1][0]             = 2.0f * freq * (1.0f + clicky_rand * ((float)rand() / (float)RAND_MAX));
-    song[2][0]             = freq * (1.0f + clicky_rand * ((float)rand() / (float)RAND_MAX));
-    PLAY_SONG(song);
-}
-
-static void secondary_click_task(void) {
-    static matrix_row_t previous[MATRIX_ROWS / 2];
-    bool                click = (synced.flags & STATE_AUDIO) && (synced.flags & STATE_CLICKY);
-    for (uint8_t row = 0; row < MATRIX_ROWS / 2; row++) {
-        matrix_row_t now = matrix_get_row(first_local_row() + row);
-        if (click && (now & ~previous[row])) {
-            secondary_click();
-        }
-        previous[row] = now;
-    }
-}
-#    endif
 
 void housekeeping_task_kb(void) {
     static sync_state_t last_sent = {0xFF, 0};
     static uint32_t     last_time;
-    if (!is_keyboard_master()) {
 #    if defined(AUDIO_ENABLE) && defined(AUDIO_CLICKY)
-        secondary_click_task();
+    click_task();
 #    endif
+    if (!is_keyboard_master()) {
         return;
     }
     sync_state_t state = local_state();
