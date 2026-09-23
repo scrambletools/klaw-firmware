@@ -52,10 +52,12 @@ static void click_save(void) {
     eeconfig_update_kb(click_on ? 1 : 0);
 }
 
-// A turn of an encoder: one short note, higher clockwise, lower the other way
+// A turn of an encoder: a two-note slide, rising clockwise and falling the
+// other way, longer and higher than the click so the two are easy to tell apart
 static void play_turn(bool clockwise, float freq) {
-    static float song[][2] = {{440.0f, 2}};
-    song[0][0]             = freq * (clockwise ? 3.0f : 1.5f);
+    static float song[][2] = {{440.0f, 6}, {440.0f, 6}};
+    song[0][0]             = freq * (clockwise ? 3.0f : 4.5f);
+    song[1][0]             = freq * (clockwise ? 4.5f : 3.0f);
     PLAY_SONG(song);
 }
 

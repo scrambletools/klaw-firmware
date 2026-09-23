@@ -211,9 +211,9 @@ would sound on the primary for the keys of both halves, so it stays off;
 instead each half watches its own matrix and plays the same click for every
 press it sees. The primary handles the `CK_` keycodes, keeps the on/off
 state in the keyboard's EEPROM word and sends it to the secondary together
-with the pitch. Encoder turns get their own short note, higher clockwise
-and lower the other way, from the half whose encoder moved, and follow the
-same on/off state. Tunes only play on the primary. The tunes are compile-time
+with the pitch. Encoder turns get their own sound, a two-note slide rising
+clockwise and falling the other way, from the half whose encoder moved, and
+follow the same on/off state. Tunes only play on the primary. The tunes are compile-time
 `SONG()` definitions in the keymap's `config.h`.
 
 ## Key drawing and LED map from the PCB
