@@ -80,11 +80,11 @@ build the default keymap for RP2040 there as well, add the ChibiOS ones:
 
 ## Building and flashing the KB2040
 
-The everyday loop is: edit in Vial, then build with the keyboard plugged in:
+You can build with the keyboard plugged in:
 
     tools/build.sh
 
-It dumps the connected half into `reference/klaw_vial.json`, regenerates the
+In order to preserve Vial settings the script dumps the connected half into `reference/klaw_vial.json`, regenerates the
 keymap and builds `klaw_vial_kb2040_left.uf2` and
 `klaw_vial_kb2040_right.uf2` (ignored by git). Always build with the
 keyboard connected after editing in Vial: a firmware built on a later day
