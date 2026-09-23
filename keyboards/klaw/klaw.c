@@ -25,7 +25,11 @@ enum { STATE_AUDIO = 1 << 0, STATE_CLICKY = 1 << 1, STATE_CAPS_WORD = 1 << 2 };
 typedef struct __attribute__((packed)) {
     uint8_t  flags;
     uint16_t clicky_freq;
+    uint8_t  turn_seq; // bumped for each turn of the secondary's encoder
+    uint8_t  turn_cw;
 } sync_state_t;
+
+static uint8_t turn_seq, turn_cw; // primary side, copied into the state
 
 static sync_state_t synced;
 
@@ -48,7 +52,31 @@ static void click_save(void) {
     eeconfig_update_kb(click_on ? 1 : 0);
 }
 
+// A turn of an encoder: one short note, higher clockwise, lower the other way
+static void play_turn(bool clockwise, float freq) {
+    static float song[][2] = {{440.0f, 2}};
+    song[0][0]             = freq * (clockwise ? 3.0f : 1.5f);
+    PLAY_SONG(song);
+}
+
+static bool click_enabled(void); // defined with the click task below
+
 bool pre_process_record_kb(uint16_t keycode, keyrecord_t *record) {
+    // encoder turns arrive as events on the primary for both halves; play the
+    // sound here for its own encoder and ask the secondary for the other
+    if (IS_ENCODEREVENT(record->event)) {
+        if (record->event.pressed) {
+            bool clockwise = record->event.type == ENCODER_CW_EVENT;
+            bool own       = record->event.key.col == (is_keyboard_left() ? 0 : 1);
+            if (own) {
+                if (click_enabled()) play_turn(clockwise, clicky_freq);
+            } else {
+                turn_seq++;
+                turn_cw = clockwise;
+            }
+        }
+        return pre_process_record_user(keycode, record);
+    }
     switch (keycode) {
         case QK_AUDIO_CLICKY_TOGGLE:
         case QK_AUDIO_CLICKY_ON:
@@ -79,18 +107,23 @@ static void play_click(float freq) {
     PLAY_SONG(song);
 }
 
+static bool click_enabled(void) {
+    if (is_keyboard_master()) {
+        return audio_is_on() && click_on;
+    }
+    // follow the primary's audio switch, without touching this half's EEPROM
+    audio_config.enable = (synced.flags & STATE_AUDIO) != 0;
+    return audio_config.enable && (synced.flags & STATE_CLICKY);
+}
+
 static void click_task(void) {
     static matrix_row_t previous[MATRIX_ROWS / 2];
-    bool                on;
-    float               freq;
-    if (is_keyboard_master()) {
-        on   = audio_is_on() && click_on;
-        freq = clicky_freq;
-    } else {
-        // follow the primary's audio switch, without touching this half's EEPROM
-        audio_config.enable = (synced.flags & STATE_AUDIO) != 0;
-        on                  = audio_config.enable && (synced.flags & STATE_CLICKY);
-        freq                = synced.clicky_freq ? synced.clicky_freq : clicky_freq;
+    static uint8_t      seen_turn;
+    bool                on   = click_enabled();
+    float               freq = is_keyboard_master() ? clicky_freq : (synced.clicky_freq ? synced.clicky_freq : clicky_freq);
+    if (!is_keyboard_master() && synced.turn_seq != seen_turn) {
+        seen_turn = synced.turn_seq;
+        if (on) play_turn(synced.turn_cw, freq);
     }
     for (uint8_t row = 0; row < MATRIX_ROWS / 2; row++) {
         matrix_row_t now = matrix_get_row(first_local_row() + row);
@@ -109,6 +142,8 @@ static sync_state_t local_state(void) {
 #        ifdef AUDIO_CLICKY
     if (click_on) state.flags |= STATE_CLICKY;
     state.clicky_freq = (uint16_t)clicky_freq;
+    state.turn_seq    = turn_seq;
+    state.turn_cw     = turn_cw;
 #        endif
 #    endif
 #    ifdef CAPS_WORD_ENABLE
@@ -131,7 +166,7 @@ void keyboard_post_init_kb(void) {
 }
 
 void housekeeping_task_kb(void) {
-    static sync_state_t last_sent = {0xFF, 0};
+    static sync_state_t last_sent = {0xFF, 0, 0, 0};
     static uint32_t     last_time;
 #    if defined(AUDIO_ENABLE) && defined(AUDIO_CLICKY)
     click_task();
